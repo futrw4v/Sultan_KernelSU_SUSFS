@@ -202,20 +202,17 @@ jobs:
 
           sed -i '/echo "+"$/d' scripts/setlocalversion
 
-      - name: Apply HK3 PWM Mod
+      - name: Apply PWM Mod
         if: inputs.codename == 'zuma'
         run: |
             set -e
 
             cd "$CONFIG"
 
-            echo "Checking Sultan HK3 PWM patch..."
-            git apply --check "$GITHUB_WORKSPACE/hk3-pwm.patch"
+            echo "Applying PWM patch..."
+            patch -p1 < "$GITHUB_WORKSPACE/pixel8-pwm.patch"
 
-            echo "Applying Sultan HK3 PWM patch..."
-            git apply "$GITHUB_WORKSPACE/hk3-pwm.patch"
-
-            echo "HK3 PWM patch applied successfully" 
+            echo "PWM patch applied successfully" 
 
       - name: Build the Kernel
         run: |
