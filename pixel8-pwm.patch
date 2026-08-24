@@ -66,7 +66,7 @@ diff --git a/google-devices/shusky/display/panel-google-bigsurf.c b/google-devic
 diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/shusky/display/panel-google-hk3.c
 --- a/google-devices/shusky/display/panel-google-hk3.c
 +++ b/google-devices/shusky/display/panel-google-hk3.c
-@@ -368,6 +368,48 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
+@@ -368,6 +368,46 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
  			      HK3_TE2_RISING_EDGE_OFFSET, HK3_TE2_FALLING_EDGE_OFFSET)
  };
  
@@ -98,13 +98,13 @@ diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/s
 +	}
 +}
 +
-+static void hk3_set_default_dimming(struct exynos_panel *ctx, int need_unlock)
-+{
-+	static const u8 cmd[4] = {0x01, 0x83, 0x03, 0x03};
-+
-+	hk3_send_dimming_freq_cmd(ctx, need_unlock, cmd);
-+}
-+
+ static void hk3_set_default_dimming(struct exynos_panel *ctx, int need_unlock)
+ {
+ 	static const u8 cmd[4] = {0x01, 0x83, 0x03, 0x03};
+ 
+ 	hk3_send_dimming_freq_cmd(ctx, need_unlock, cmd);
+ }
+ 
 +static void hk3_set_override_dimming(struct exynos_panel *ctx, int need_unlock)
 +{
 +	hk3_send_dimming_freq_cmd(ctx, need_unlock, freq_cmd);
@@ -113,7 +113,7 @@ diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/s
  static inline bool is_in_comp_range(int temp)
  {
  	return (temp >= 10 && temp <= 49);
-@@ -677,6 +719,10 @@ static void hk3_set_panel_feat(struct exynos_panel *ctx, const u32 vrefresh,
+@@ -677,6 +717,10 @@ static void hk3_set_panel_feat(struct exynos_panel *ctx, const u32 vrefresh,
  		else
  			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x81, 0x83, 0x03, 0x03);
  	}
