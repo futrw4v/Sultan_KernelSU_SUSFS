@@ -1,7 +1,12 @@
 diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/shusky/display/panel-google-hk3.c
 --- a/google-devices/shusky/display/panel-google-hk3.c
 +++ b/google-devices/shusky/display/panel-google-hk3.c
-@@ -348,6 +348,50 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
+@@ -344,7 +344,51 @@
+ static const struct exynos_binned_lp hk3_binned_lp[] = {
+ 	/* low threshold 40 nits */
+ 	BINNED_LP_MODE_TIMING("low", 766, hk3_lp_low_cmds,
+ 			      HK3_TE2_RISING_EDGE_OFFSET, HK3_TE2_FALLING_EDGE_OFFSET),
+ 	BINNED_LP_MODE_TIMING("high", 3307, hk3_lp_high_cmds,
  			      HK3_TE2_RISING_EDGE_OFFSET, HK3_TE2_FALLING_EDGE_OFFSET)
  };
  
@@ -29,8 +34,7 @@ diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/s
 +					   0x80, 0x83, 0x03, 0x01);
 +		else
 +			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21,
-+					   cmd[0] | 0x80,
-+					   cmd[1], cmd[2], cmd[3]);
++					   cmd[0] | 0x80, cmd[1], cmd[2], cmd[3]);
 +	}
 +
 +	if (need_unlock) {
@@ -54,29 +58,25 @@ diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/s
  static inline bool is_in_comp_range(int temp)
  {
  	return (temp >= 10 && temp <= 49);
-@@ -636,14 +680,10 @@ static void hk3_set_panel_feat(struct exynos_panel *ctx,
- 	 *
- 	 * Description: early-exit sequence overrides some configs HBM set.
- 	 */
--	if (test_bit(FEAT_EARLY_EXIT, feat)) {
--		if (test_bit(FEAT_HBM, feat))
--			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x00, 0x83, 0x03, 0x01);
--		else
--			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x01, 0x83, 0x03, 0x03);
--	} else {
--		if (test_bit(FEAT_HBM, feat))
--			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x80, 0x83, 0x03, 0x01);
--		else
--			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x81, 0x83, 0x03, 0x03);
--	}
+@@ -639,10 +683,3 @@
+ 	if (test_bit(FEAT_EARLY_EXIT, feat)) {
+ 		if (test_bit(FEAT_HBM, feat))
+ 			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x00, 0x83, 0x03, 0x01);
+ 		else
+ 			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x01, 0x83, 0x03, 0x03);
+ 	} else {
+ 		if (test_bit(FEAT_HBM, feat))
+ 			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x80, 0x83, 0x03, 0x01);
+ 		else
+ 			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x81, 0x83, 0x03, 0x03);
+ 	}
 +	if (is_panel_enabled(ctx))
 +		hk3_set_override_dimming(ctx, 0);
 +	else
 +		hk3_set_default_dimming(ctx, 0);
- 	EXYNOS_DCS_BUF_ADD(ctx, 0xB0, 0x00, 0x10, 0xBD);
- 	val = test_bit(FEAT_EARLY_EXIT, feat) ? 0x22 : 0x00;
- 	EXYNOS_DCS_BUF_ADD(ctx, 0xBD, val);
-@@ -1928,6 +1968,9 @@ static void hk3_set_local_hbm_mode(struct exynos_panel *ctx,
+@@ -1928,12 +1948,18 @@
+ static void hk3_set_local_hbm_mode(struct exynos_panel *ctx,
+ 				 bool local_hbm_en)
  {
  	const struct exynos_panel_mode *pmode = ctx->current_mode;
  
@@ -86,11 +86,9 @@ diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/s
  	/* TODO: LHBM Position & Size */
  	hk3_write_display_mode(ctx, &pmode->mode);
  
-@@ -1935,6 +1978,9 @@ static void hk3_set_local_hbm_mode(struct exynos_panel *ctx,
  	if (local_hbm_en)
  		hk3_set_local_hbm_brightness(ctx, true);
  
 +	if (!local_hbm_en)
 +		hk3_set_override_dimming(ctx, 1);
-+
  }
