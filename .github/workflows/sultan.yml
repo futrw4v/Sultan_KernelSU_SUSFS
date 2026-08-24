@@ -207,8 +207,12 @@ jobs:
           git clone --depth=1 https://github.com/updateing/kernel-google-modules-display.git /tmp/pwm_display
           git clone --depth=1 https://github.com/updateing/kernel-devices-google-shusky.git /tmp/pwm_shusky
 
-          echo "Injecting display drivers into Sultan tree..."
+          echo "Adapting 5.15 DRM header paths to Linux 6.1..."
 
+          grep -rl '<drm/drm_dsc\.h>' /tmp/pwm_display /tmp/pwm_shusky | xargs -r sed -i 's|<drm/drm_dsc\.h>|<drm/display/drm_dsc.h>|g'
+          grep -rl '<drm/drm_dp_helper\.h>' /tmp/pwm_display /tmp/pwm_shusky | xargs -r sed -i 's|<drm/drm_dp_helper\.h>|<drm/display/drm_dp_helper.h>|g'
+
+          echo "Injecting display drivers into Sultan tree..."
           rsync -av --exclude='.git' --exclude='BUILD.bazel' --exclude='Kbuild' --exclude='Makefile' \
             /tmp/pwm_display/ "$CONFIG/google-modules/display/"
 
@@ -231,8 +235,14 @@ jobs:
             fi
           done
 
-          echo "Injection and symlinks completed successfully!"
+          if [ -d "$CONFIG/include/drm/display" ]; then
+            for f in "$CONFIG/include/drm/display"/*.h; do
+              [ -e "$f" ] && ln -sf "display/$(basename "$f")" "$CONFIG/include/drm/$(basename "$f")" || true
+            done
+          fi
 
+          echo "Injection and 6.1 compatibility fixes completed!"
+          
       - name: Build the Kernel
         run: |
           echo "Changing to configuration directory: $CONFIG..."
