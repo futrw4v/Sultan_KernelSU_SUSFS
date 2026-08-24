@@ -66,10 +66,7 @@ diff --git a/google-devices/shusky/display/panel-google-bigsurf.c b/google-devic
 diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/shusky/display/panel-google-hk3.c
 --- a/google-devices/shusky/display/panel-google-hk3.c
 +++ b/google-devices/shusky/display/panel-google-hk3.c
-@@ -368,6 +368,46 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
- 			      HK3_TE2_RISING_EDGE_OFFSET, HK3_TE2_FALLING_EDGE_OFFSET)
- };
- 
+@@ -368,1 +368,36 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
 +u8 freq_cmd[4] = {0x00, 0x43, 0x43, 0x03};
 +module_param_array(freq_cmd, byte, NULL, 0644);
 +
