@@ -201,13 +201,14 @@ jobs:
           sed -i '/echo "+"$/d' scripts/setlocalversion
 
       - name: Inject updateing PWM Display Mod
-        if: inputs.codename == 'zuma'
+        if: inputs.codename == 'zuma' || inputs.codename == 'zumapro'
         run: |
-          echo "Cloning updateing's display repo..."
+          echo "Cloning updateing's display and shusky repos..."
           git clone --depth=1 https://github.com/updateing/kernel-google-modules-display.git /tmp/pwm_display
           git clone --depth=1 https://github.com/updateing/kernel-devices-google-shusky.git /tmp/pwm_shusky
 
           echo "Injecting display drivers into Sultan tree..."
+
           rsync -av --exclude='.git' --exclude='BUILD.bazel' --exclude='Kbuild' --exclude='Makefile' \
             /tmp/pwm_display/ "$CONFIG/google-modules/display/"
 
@@ -220,8 +221,17 @@ jobs:
               /tmp/pwm_shusky/ "$CONFIG/google-devices/zuma/"
           fi
 
-          echo "Injection completed successfully!"
+          echo "Fixing include header symlinks for panel drivers..."
 
+          for dev_dir in "$CONFIG/google-devices/shusky/display" "$CONFIG/google-devices/zuma/display"; do
+            if [ -d "$dev_dir" ]; then
+              ln -sfn ../../../google-modules/display/common/include "$dev_dir/include"
+              ln -sfn ../../../google-modules/display/samsung/panel "$dev_dir/panel"
+              ln -sfn ../../../google-modules/display/samsung "$dev_dir/samsung"
+            fi
+          done
+
+          echo "Injection and symlinks completed successfully!"
 
       - name: Build the Kernel
         run: |
