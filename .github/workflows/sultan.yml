@@ -200,6 +200,28 @@ jobs:
 
           sed -i '/echo "+"$/d' scripts/setlocalversion
 
+      - name: Inject updateing PWM Display Mod
+        if: inputs.codename == 'zuma'
+        run: |
+          echo "Cloning updateing's display repo..."
+          git clone --depth=1 https://github.com/updateing/kernel-google-modules-display.git /tmp/pwm_display
+          git clone --depth=1 https://github.com/updateing/kernel-devices-google-shusky.git /tmp/pwm_shusky
+
+          echo "Injecting display drivers into Sultan tree..."
+          rsync -av --exclude='.git' --exclude='BUILD.bazel' --exclude='Kbuild' --exclude='Makefile' \
+            /tmp/pwm_display/ "$CONFIG/google-modules/display/"
+
+          if [ -d "$CONFIG/google-devices/shusky" ]; then
+            rsync -av --exclude='.git' --exclude='BUILD.bazel' --exclude='Kbuild' --exclude='Makefile' \
+              /tmp/pwm_shusky/ "$CONFIG/google-devices/shusky/"
+          fi
+          if [ -d "$CONFIG/google-devices/zuma" ]; then
+            rsync -av --exclude='.git' --exclude='BUILD.bazel' --exclude='Kbuild' --exclude='Makefile' \
+              /tmp/pwm_shusky/ "$CONFIG/google-devices/zuma/"
+          fi
+
+          echo "Injection completed successfully!"
+
 
       - name: Build the Kernel
         run: |
