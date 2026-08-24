@@ -210,10 +210,10 @@ jobs:
             cd "$CONFIG"
 
             echo "Checking Sultan HK3 PWM patch..."
-            git apply --check ../hk3-pwm.patch
+            git apply --check "$GITHUB_WORKSPACE/hk3-pwm.patch"
 
             echo "Applying Sultan HK3 PWM patch..."
-            git apply ../hk3-pwm.patch
+            git apply "$GITHUB_WORKSPACE/hk3-pwm.patch"
 
             echo "HK3 PWM patch applied successfully" 
 
