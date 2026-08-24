@@ -199,45 +199,6 @@ jobs:
           sed -i 's/CONFIG_LOCALVERSION="-Sultan"/CONFIG_LOCALVERSION="-Sultan-Wild"/' ./arch/arm64/configs/${{ inputs.codename }}_defconfig
 
           sed -i '/echo "+"$/d' scripts/setlocalversion
-
-      - name: Apply Clean Pixel 8 PWM Mod
-        if: inputs.codename == 'zuma'
-        run: |
-          echo "Cloning and extracting clean PWM patch..."
-          git clone --depth=1 https://github.com/updateing/kernel-google-modules-display.git /tmp/display_src
-          git clone --depth=1 https://github.com/updateing/kernel-devices-google-shusky.git /tmp/shusky_src
-
-          cd "$CONFIG"
-
-          cp -f /tmp/display_src/samsung/exynos_drm_decon.c ./google-modules/display/samsung/
-          cp -f /tmp/display_src/samsung/exynos_drm_crtc.c ./google-modules/display/samsung/
-          cp -f /tmp/display_src/samsung/exynos_drm_decon.h ./google-modules/display/samsung/
-          cp -f /tmp/display_src/samsung/exynos_drm_crtc.h ./google-modules/display/samsung/
-          cp -f /tmp/shusky_src/display/panel-google-bigsurf.c ./google-devices/shusky/display/
-          cp -f /tmp/shusky_src/display/panel-google-hk3.c ./google-devices/shusky/display/
-          cp -f /tmp/shusky_src/display/exposure-adj.c ./google-devices/shusky/display/
-          cp -f /tmp/shusky_src/display/exposure-adj.h ./google-devices/shusky/display/
-
-          sed -i 's|<drm/drm_dsc\.h>|<drm/display/drm_dsc.h>|g' ./google-modules/display/samsung/exynos_drm_connector.h || true
-          sed -i '1i#include <drm/display/drm_dsc_helper.h>' ./google-devices/shusky/display/panel-google-hk3.c
-          sed -i '1i#include <drm/display/drm_dsc_helper.h>' ./google-devices/shusky/display/panel-google-bigsurf.c
-
-          sed -i 's/int exynos_panel_remove/void exynos_panel_remove/g' ./google-devices/shusky/display/panel-google-*.c || true
-          sed -i 's/int exynos_panel_remove/void exynos_panel_remove/g' ./google-modules/display/samsung/panel/panel-samsung-drv.* || true
-          
-          python3 -c '
-          for fpath in ["./google-devices/shusky/display/panel-google-hk3.c", "./google-devices/shusky/display/panel-google-bigsurf.c"]:
-              with open(fpath, "r") as f:
-                  s = f.read()
-              s = s.replace("#include \"include/trace/dpu_trace.h\"", "#include \"../../google-modules/display/common/include/trace/dpu_trace.h\"")
-              s = s.replace("#include \"include/trace/panel_trace.h\"", "#include \"../../google-modules/display/common/include/trace/panel_trace.h\"")
-              s = s.replace("#include \"panel/panel-samsung-drv.h\"", "#include \"../../google-modules/display/samsung/panel/panel-samsung-drv.h\"")
-              s = s.replace("#ifdef CONFIG_DEBUG_FS\n\tstruct dentry *csroot = ctx->debugfs_cmdset_entry;\n\tstruct hk3_panel *spanel = to_spanel(ctx);", "\tstruct hk3_panel *spanel = to_spanel(ctx);\n#ifdef CONFIG_DEBUG_FS\n\tstruct dentry *csroot = ctx->debugfs_cmdset_entry;")
-              with open(fpath, "w") as f:
-                  f.write(s)
-          '
-
-          echo "Clean PWM Mod applied successfully!"
           
       - name: Build the Kernel
         run: |
