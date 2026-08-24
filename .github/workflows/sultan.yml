@@ -36,7 +36,9 @@ jobs:
       #    remove-swapfile: 'true'        # Frees ~4 GB
       #    remove-cached-tools: 'false'   # Avoid unless confirmed safe
       #    verbose: 'true'                # Enable detailed logging
-
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        
       - name: Download and extract GCC 14.2.0 toolchain
         run: |
           echo "Downloading GCC 14.2.0 cross-compiler toolchain..."
