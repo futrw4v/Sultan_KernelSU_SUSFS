@@ -210,7 +210,7 @@ jobs:
             cd "$CONFIG"
 
             echo "Applying PWM patch..."
-            patch -p1 < "$GITHUB_WORKSPACE/pixel8-pwm.patch"
+            patch -l -p1 < "$GITHUB_WORKSPACE/custom_pwm.patch"
 
             echo "PWM patch applied successfully" 
 
