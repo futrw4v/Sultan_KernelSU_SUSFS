@@ -1,46 +1,72 @@
+diff --git a/google-devices/shusky/display/panel-google-bigsurf.c b/google-devices/shusky/display/panel-google-bigsurf.c
 --- a/google-devices/shusky/display/panel-google-bigsurf.c
 +++ b/google-devices/shusky/display/panel-google-bigsurf.c
-@@ -279,6 +279,27 @@ static const struct exynos_binned_lp bigsurf_binned_lp[] = {
- 			      BIGSURF_TE2_RISING_EDGE_OFFSET, BIGSURF_TE2_FALLING_EDGE_OFFSET)
+@@ -206,8 +206,6 @@ static const struct exynos_dsi_cmd bigsurf_init_cmds[] = {
+ 				 0x00, 0x00, 0x00, 0x00, 0x60, 0x10, 0x70, 0x40,
+ 				 0x60, 0x10, 0x70, 0x40, 0x60, 0x10, 0x70, 0x40,
+ 				 0x60, 0x10, 0x70, 0x40),
+-	/* Disable AOD power saving */
+-	EXYNOS_DSI_CMD_SEQ(0xC7, 0x00),
+ 
+ 	/* CMD2, Page4 */
+ 	/* b/343326731: Extend DBI Flash Data Update Cycle time */
+@@ -1091,32 +1089,12 @@ static void bigsurf_lhbm_brightness_init(struct exynos_panel *ctx)
+ 			grp, LHBM_BRT_LEN, spanel->lhbm_ctl.brt_overdrive[grp]);
+ }
+ 
+-static void bigsurf_debugfs_init(struct drm_panel *panel, struct dentry *root)
+-{
+-	struct exynos_panel *ctx = container_of(panel, struct exynos_panel, panel);
+-	struct dentry *panel_root, *csroot;
+-
+-	if (!ctx)
+-		return;
+-
+-	panel_root = debugfs_lookup("panel", root);
+-	if (!panel_root)
+-		return;
+-
+-	csroot = debugfs_lookup("cmdsets", panel_root);
+-	if (!csroot) {
+-		goto panel_out;
+-	}
+-
+-	exynos_panel_debugfs_create_cmdset(ctx, csroot, &bigsurf_init_cmd_set, "init");
+-	dput(csroot);
+-panel_out:
+-	dput(panel_root);
+-}
+-
+ static void bigsurf_panel_init(struct exynos_panel *ctx)
+ {
+ 	struct bigsurf_panel *spanel = to_spanel(ctx);
++	struct dentry *csroot = ctx->debugfs_cmdset_entry;
++
++	exynos_panel_debugfs_create_cmdset(ctx, csroot, &bigsurf_init_cmd_set, "init");
+ 	bigsurf_dimming_frame_setting(ctx, BIGSURF_DIMMING_FRAME);
+ 	bigsurf_lhbm_brightness_init(ctx);
+ 	spanel->panel_brightness = exynos_panel_get_brightness(ctx);
+@@ -1139,7 +1117,6 @@ static const struct drm_panel_funcs bigsurf_drm_funcs = {
+ 	.prepare = exynos_panel_prepare,
+ 	.enable = bigsurf_enable,
+ 	.get_modes = exynos_panel_get_modes,
+-	.debugfs_init = bigsurf_debugfs_init,
  };
  
-+u8 freq_cmd[4] = {0x00, 0x43, 0x43, 0x03};
-+module_param_array(freq_cmd, byte, NULL, 0644);
-+
-+static void bigsurf_send_dimming_freq_cmd(struct exynos_panel *ctx, int need_unlock, const u8 *cmd)
-+{
-+	if (need_unlock)
-+		EXYNOS_DCS_BUF_ADD_SET(ctx, unlock_cmd_f0);
-+
-+	EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, cmd[0], cmd[1], cmd[2], cmd[3]);
-+
-+	if (need_unlock) {
-+		EXYNOS_DCS_BUF_ADD_SET(ctx, freq_update);
-+		EXYNOS_DCS_BUF_ADD_SET_AND_FLUSH(ctx, lock_cmd_f0);
-+	}
-+}
-+
-+static void bigsurf_set_override_dimming(struct exynos_panel *ctx, int need_unlock)
-+{
-+	bigsurf_send_dimming_freq_cmd(ctx, need_unlock, freq_cmd);
-+}
-+
- static inline bool is_in_comp_range(int temp)
- {
- 	return (temp >= 10 && temp <= 49);
-@@ -530,6 +551,9 @@ static void bigsurf_set_panel_feat(struct exynos_panel *ctx, const u32 vrefresh,
- 		else
- 			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x81, 0x83, 0x03, 0x03);
- 	}
-+	if (is_panel_enabled(ctx))
-+		bigsurf_set_override_dimming(ctx, 0);
-+
- 	EXYNOS_DCS_BUF_ADD(ctx, 0xB0, 0x00, 0x10, 0xBD);
- 	val = test_bit(FEAT_EARLY_EXIT, feat) ? 0x22 : 0x00;
- 	EXYNOS_DCS_BUF_ADD(ctx, 0xBD, val);
+ static int bigsurf_panel_config(struct exynos_panel *ctx);
+@@ -1278,7 +1255,7 @@ const struct exynos_panel_desc google_bigsurf = {
+ 	/* supported HDR format bitmask : 1(DOLBY_VISION), 2(HDR10), 3(HLG) */
+ 	.hdr_formats = BIT(2) | BIT(3),
+ 	.max_luminance = 10000000,
+-	.max_avg_luminance = 10000000,
++	.max_avg_luminance = 1200000,
+ 	.min_luminance = 5,
+ 	.modes = bigsurf_modes,
+ 	.num_modes = ARRAY_SIZE(bigsurf_modes),
+diff --git a/google-devices/shusky/display/panel-google-hk3.c b/google-devices/shusky/display/panel-google-hk3.c
 --- a/google-devices/shusky/display/panel-google-hk3.c
 +++ b/google-devices/shusky/display/panel-google-hk3.c
-@@ -344,6 +344,27 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
+@@ -368,6 +368,48 @@ static const struct exynos_binned_lp hk3_binned_lp[] = {
  			      HK3_TE2_RISING_EDGE_OFFSET, HK3_TE2_FALLING_EDGE_OFFSET)
  };
  
@@ -49,15 +75,34 @@
 +
 +static void hk3_send_dimming_freq_cmd(struct exynos_panel *ctx, int need_unlock, const u8 *cmd)
 +{
++	struct hk3_panel *spanel = to_spanel(ctx);
++
 +	if (need_unlock)
 +		EXYNOS_DCS_BUF_ADD_SET(ctx, unlock_cmd_f0);
 +
-+	EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, cmd[0], cmd[1], cmd[2], cmd[3]);
++	if (test_bit(FEAT_EARLY_EXIT, spanel->feat)) {
++		if (test_bit(FEAT_HBM, spanel->feat))
++			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x00, 0x83, 0x03, 0x01);
++		else
++			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, cmd[0], cmd[1], cmd[2], cmd[3]);
++	} else {
++		if (test_bit(FEAT_HBM, spanel->feat))
++			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x80, 0x83, 0x03, 0x01);
++		else
++			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, cmd[0] | 0x80, cmd[1], cmd[2], cmd[3]);
++	}
 +
 +	if (need_unlock) {
 +		EXYNOS_DCS_BUF_ADD_SET(ctx, freq_update);
 +		EXYNOS_DCS_BUF_ADD_SET_AND_FLUSH(ctx, lock_cmd_f0);
 +	}
++}
++
++static void hk3_set_default_dimming(struct exynos_panel *ctx, int need_unlock)
++{
++	static const u8 cmd[4] = {0x01, 0x83, 0x03, 0x03};
++
++	hk3_send_dimming_freq_cmd(ctx, need_unlock, cmd);
 +}
 +
 +static void hk3_set_override_dimming(struct exynos_panel *ctx, int need_unlock)
@@ -68,13 +113,14 @@
  static inline bool is_in_comp_range(int temp)
  {
  	return (temp >= 10 && temp <= 49);
-@@ -677,6 +698,9 @@ static void hk3_set_panel_feat(struct exynos_panel *ctx, const u32 vrefresh,
+@@ -677,6 +719,10 @@ static void hk3_set_panel_feat(struct exynos_panel *ctx, const u32 vrefresh,
  		else
  			EXYNOS_DCS_BUF_ADD(ctx, 0xBD, 0x21, 0x81, 0x83, 0x03, 0x03);
  	}
 +	if (is_panel_enabled(ctx))
 +		hk3_set_override_dimming(ctx, 0);
-+
++	else
++		hk3_set_default_dimming(ctx, 0);
  	EXYNOS_DCS_BUF_ADD(ctx, 0xB0, 0x00, 0x10, 0xBD);
  	val = test_bit(FEAT_EARLY_EXIT, feat) ? 0x22 : 0x00;
  	EXYNOS_DCS_BUF_ADD(ctx, 0xBD, val);
